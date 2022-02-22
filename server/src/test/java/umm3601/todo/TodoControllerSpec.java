@@ -57,113 +57,477 @@ import io.javalin.plugin.json.JavalinJackson;
 @SuppressWarnings({ "MagicNumber" })
 public class TodoControllerSpec {
 
-  private Context ctx = mock(Context.class);
+  private static final long MAX_REQUEST_SIZE = new JavalinConfig().maxRequestSize;
+
+  private MockHttpServletRequest mockReq = new MockHttpServletRequest();
+  private MockHttpServletResponse mockRes = new MockHttpServletResponse();
 
   private TodoController todoController;
-  private static TodoDatabase db;
+
+  private ObjectId samsId;
+
+  private static MongoClient mongoClient;
+  private static MongoDatabase db;
+
+  private static JavalinJackson javalinJackson = new JavalinJackson();
+
+  @BeforeAll
+  public static void setupAll() {
+    String mongoAddr = System.getenv().getOrDefault("MONGO_ADDR", "localhost");
+
+    mongoClient = MongoClients.create(
+    MongoClientSettings.builder()
+    .applyToClusterSettings(builder ->
+    builder.hosts(Arrays.asList(new ServerAddress(mongoAddr))))
+    .build());
+
+    db = mongoClient.getDatabase("test");
+  }
 
   @BeforeEach
-  public void setUp() throws IOException {
-    ctx.clearCookieStore();
+  public void setUpEach() throws IOException {
+    // Reset our mock request and response objects
+    mockReq.resetAll();
+    mockRes.resetAll();
 
-    db = new TodoDatabase(Server.TODO_DATA_FILE);
+    // Setup database
+    MongoCollection<Document> todoDocuments = db.getCollection("todos");
+    todoDocuments.drop();
+    List<Document> testTodos = new ArrayList<>();
+    testTodos.add(
+      new Document()
+        .append("name", "Chris")
+        .append("age", 25)
+        .append("company", "UMM")
+        .append("email", "chris@this.that")
+        .append("role", "admin")
+        .append("avatar", "https://gravatar.com/avatar/8c9616d6cc5de638ea6920fb5d65fc6c?d=identicon"));
+    testTodos.add(
+      new Document()
+        .append("name", "Pat")
+        .append("age", 37)
+        .append("company", "IBM")
+        .append("email", "pat@something.com")
+        .append("role", "editor")
+        .append("avatar", "https://gravatar.com/avatar/b42a11826c3bde672bce7e06ad729d44?d=identicon"));
+    testTodos.add(
+      new Document()
+        .append("name", "Jamie")
+        .append("age", 37)
+        .append("company", "OHMNET")
+        .append("email", "jamie@frogs.com")
+        .append("role", "viewer")
+        .append("avatar", "https://gravatar.com/avatar/d4a6c71dd9470ad4cf58f78c100258bf?d=identicon"));
+
+    samsId = new ObjectId();
+    Document sam =
+      new Document()
+        .append("_id", samsId)
+        .append("name", "Sam")
+        .append("age", 45)
+        .append("company", "OHMNET")
+        .append("email", "sam@frogs.com")
+        .append("role", "viewer")
+        .append("avatar", "https://gravatar.com/avatar/08b7610b558a4cbbd20ae99072801f4d?d=identicon");
+
+
+    todoDocuments.insertMany(testTodos);
+    todoDocuments.insertOne(sam);
+
     todoController = new TodoController(db);
+  }
+
+  /**
+   * Construct an instance of `ContextUtil`, which is essentially
+   * a mock context in Javalin. See `mockContext(String, Map)` for
+   * more details.
+   */
+  private Context mockContext(String path) {
+    return mockContext(path, Map.of());
+  }
+
+  /**
+   * Construct an instance of `ContextUtil`, which is essentially a mock
+   * context in Javalin. We need to provide a couple of attributes, which is
+   * the fifth argument, which forces us to also provide the (default) value
+   * for the fourth argument. There are two attributes we need to provide:
+   *
+   *   - One is a `JsonMapper` that is used to translate between POJOs and JSON
+   *     objects. This is needed by almost every test.
+   *   - The other is `maxRequestSize`, which is needed for all the ADD requests,
+   *     since `ContextUtil` checks to make sure that the request isn't "too big".
+   *     Those tests fails if you don't provide a value for `maxRequestSize` for
+   *     it to use in those comparisons.
+   */
+  private Context mockContext(String path, Map<String, String> pathParams) {
+    return ContextUtil.init(
+        mockReq, mockRes,
+        path,
+        pathParams,
+        HandlerType.INVALID,
+        Map.ofEntries(
+          entry(JSON_MAPPER_KEY, javalinJackson),
+          entry(ContextUtil.maxRequestSizeKey, MAX_REQUEST_SIZE)));
+  }
+
+  @AfterAll
+  public static void teardown() {
+    db.drop();
+    mongoClient.close();
   }
 
   @Test
   public void canGetAllTodos() throws IOException {
-    // Call the method on the mock controller
+    // Create our fake Javalin context
+    String path = "api/todos";
+    Context ctx = mockContext(path);
     todoController.getTodos(ctx);
 
-    // Confirm that `json` was called with all the todos.
-    ArgumentCaptor<Todo[]> argument = ArgumentCaptor.forClass(Todo[].class);
-    verify(ctx).json(argument.capture());
-    assertEquals(db.size(), argument.getValue().length);
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+    assertEquals(db.getCollection("todos").countDocuments(),
+       javalinJackson.fromJsonString(result, Todo[].class).length);
   }
 
   @Test
-  public void canLimitTo20Todos() throws IOException {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put("limit", Arrays.asList(new String[] {"20"}));
+  public void canGetTodosWithAge37() throws IOException {
 
-    when(ctx.queryParamMap()).thenReturn(queryParams);
+    // Set the query string to test with
+    mockReq.setQueryString("age=37");
+
+    // Create our fake Javalin context
+    Context ctx = mockContext("api/todos");
+
     todoController.getTodos(ctx);
 
-    // Confirm that the todos passed to `json` have length 20.
-    ArgumentCaptor<Todo[]> argument = ArgumentCaptor.forClass(Todo[].class);
-    verify(ctx).json(argument.capture());
-    assertEquals(20, argument.getValue().length);
-  }
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
 
-  /**
-   * Test that if the Todo sends a request with an illegal value in
-   * the limit field (i.e., something that can't be parsed to a number)
-   * we get a reasonable error code back.
-   */
-  @Test
-  public void respondsAppropriatelyToIllegalLimit() {
-    // We'll set the requested "limit" to be a string ("abc")
-    // that can't be parsed to a number.
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put("limit", Arrays.asList(new String[] {"abc"}));
+    String result = ctx.resultString();
+    Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
 
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // This should now throw a `BadRequestResponse` exception because
-    // our request has an limit that can't be parsed to a number.
-    Assertions.assertThrows(BadRequestResponse.class, () -> {
-      todoController.getTodos(ctx);
-    });
-  }
-
-  @Test
-  public void canGetTodosSortedByOwner() throws IOException {
-
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put("orderBy", Arrays.asList(new String[] {"owner"}));
-
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    todoController.getTodos(ctx);
-
-    // Confirm that all the todos passed to `json` are sorted by owner.
-    ArgumentCaptor<Todo[]> argument = ArgumentCaptor.forClass(Todo[].class);
-    verify(ctx).json(argument.capture());
-    for (int i = 0; i < argument.getValue().length - 1; ++i) {
-      Assertions.assertTrue(argument.getValue()[i].owner.compareTo(argument.getValue()[i + 1].owner) <= 0);
+    assertEquals(2, resultTodos.length); // There should be two todos returned
+    for (Todo todo : resultTodos) {
+      assertEquals(37, todo.age); // Every todo should be age 37
     }
   }
 
   /**
-   * Test that if the Todo sends a request with an illegal value in
-   * the orderBy field (i.e., an non-applicable todo attribute)
-   * we get a reasonable error code back.
-   */
+  * Test that if the todo sends a request with an illegal value in
+  * the age field (i.e., something that can't be parsed to a number)
+  * we get a reasonable error code back.
+  */
   @Test
-  public void respondsAppropriateToIllegalOrderBy() {
-    // We'll set the requested "age" to be a string ("abc")
-    // that can't be parsed to a number.
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put("orderBy", Arrays.asList(new String[] {"unknown"}));
+  public void respondsAppropriatelyToIllegalAge() {
 
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // This should now throw a `BadRequestResponse` exception because
-    // our request has an order that is not an applicable todo attribute.
-    Assertions.assertThrows(BadRequestResponse.class, () -> {
+    mockReq.setQueryString("age=abc");
+    Context ctx = mockContext("api/todos");
+
+    // This should now throw a `ValidationException` because
+    // our request has an age that can't be parsed to a number.
+    assertThrows(ValidationException.class, () -> {
       todoController.getTodos(ctx);
     });
   }
 
   @Test
+  public void canGetTodosWithCompany() throws IOException {
+
+    mockReq.setQueryString("company=OHMNET");
+    Context ctx = mockContext("api/todos");
+    todoController.getTodos(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+    String result = ctx.resultString();
+
+    Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
+
+    assertEquals(2, resultTodos.length); // There should be two todos returned
+    for (Todo todo : resultTodos) {
+      assertEquals("OHMNET", todo.company);
+    }
+  }
+
+  @Test
+  public void canGetTodosWithRole() throws IOException {
+
+    mockReq.setQueryString("role=viewer");
+    Context ctx = mockContext("api/todos");
+    todoController.getTodos(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+    String result = ctx.resultString();
+    for (Todo todo : javalinJackson.fromJsonString(result, Todo[].class)) {
+      assertEquals("viewer", todo.role);
+    }
+  }
+
+  @Test
+  public void canGetTodosWithGivenCompanyAndAge() throws IOException {
+
+    mockReq.setQueryString("company=OHMNET&age=37");
+    Context ctx = mockContext("api/todos");
+    todoController.getTodos(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+    String result = ctx.resultString();
+    Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
+
+    assertEquals(1, resultTodos.length); // There should be one todo returned
+    for (Todo todo : resultTodos) {
+      assertEquals("OHMNET", todo.company);
+      assertEquals(37, todo.age);
+    }
+  }
+
+  @Test
   public void canGetTodoWithSpecifiedId() throws IOException {
-    when(ctx.pathParam("id")).thenReturn("58895985a22c04e761776d54");
+
+    String testID = samsId.toHexString();
+
+    Context ctx = mockContext("api/todos", Map.of("id", testID));
     todoController.getTodo(ctx);
-    verify(ctx).status(HttpCode.OK);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+    Todo resultTodo = javalinJackson.fromJsonString(result, Todo.class);
+
+    assertEquals(samsId.toHexString(), resultTodo._id);
+    assertEquals("Sam", resultTodo.name);
+  }
+
+  @Test
+  public void respondsAppropriatelyToRequestForIllegalId() throws IOException {
+    Context ctx = mockContext("api/todos", Map.of("id", "bad"));
+
+    assertThrows(BadRequestResponse.class, () -> {
+      todoController.getTodo(ctx);
+    });
   }
 
   @Test
   public void respondsAppropriatelyToRequestForNonexistentId() throws IOException {
-    when(ctx.pathParam("id")).thenReturn("nonexistent");
-    Assertions.assertThrows(NotFoundResponse.class, () -> {
+    Context ctx = mockContext("api/todos/", Map.of("id", "58af3a600343927e48e87335"));
+
+    assertThrows(NotFoundResponse.class, () -> {
       todoController.getTodo(ctx);
     });
+  }
+
+  @Test
+  public void canAddTodo() throws IOException {
+
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": 25,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+
+    Context ctx = mockContext("api/todos");
+
+    todoController.addNewTodo(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+    String id = javalinJackson.fromJsonString(result, ObjectNode.class).get("id").asText();
+    assertNotEquals("", id);
+    System.out.println(id);
+
+    assertEquals(1, db.getCollection("todos").countDocuments(eq("_id", new ObjectId(id))));
+
+    //verify todo was added to the database and the correct ID
+    Document addedTodo = db.getCollection("todos").find(eq("_id", new ObjectId(id))).first();
+    assertNotNull(addedTodo);
+    assertEquals("Test Todo", addedTodo.getString("name"));
+    assertEquals(25, addedTodo.getInteger("age"));
+    assertEquals("testers", addedTodo.getString("company"));
+    assertEquals("test@example.com", addedTodo.getString("email"));
+    assertEquals("viewer", addedTodo.getString("role"));
+    assertTrue(addedTodo.containsKey("avatar"));
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithInvalidEmail() throws IOException {
+    String testNewTodo = "{"mpany\": \"testers\","
+    + "\"email\": \"test@example.com\","
+    + "\"role\": \"invalidrole\""
+    + "}";
+      + "\"company\": \"testers\","
+      + "\"email\": \"invalidemail\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithInvalidAge() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": \"notanumber\","
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithAgeOfZero() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": 0,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithNegativeAge() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": -1,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithMissingName() throws IOException {
+    String testNewTodo = "{"
+      + "\"age\": 25,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithEmptyName() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"\","
+      + "\"age\": 25,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithMissingCompany() throws IOException {
+    String testNewTodo = "{"
+      + "\"age\": 25,"
+      + "\"name\": \"Test Todo\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithEmptyCompany() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": 25,"
+      + "\"company\": \"\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"viewer\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void respondsAppropriateToAddingTodoWithInvalidRole() throws IOException {
+    String testNewTodo = "{"
+      + "\"name\": \"Test Todo\","
+      + "\"age\": 25,"
+      + "\"company\": \"testers\","
+      + "\"email\": \"test@example.com\","
+      + "\"role\": \"invalidrole\""
+      + "}";
+    mockReq.setBodyContent(testNewTodo);
+    mockReq.setMethod("POST");
+    Context ctx = mockContext("api/todos");
+
+    assertThrows(ValidationException.class, () -> {
+      todoController.addNewTodo(ctx);
+    });
+  }
+
+  @Test
+  public void canDeleteTodo() throws IOException {
+
+    String testID = samsId.toHexString();
+
+    // Todo exists before deletion
+    assertEquals(1, db.getCollection("todos").countDocuments(eq("_id", new ObjectId(testID))));
+
+    Context ctx = mockContext("api/todos", Map.of("id", testID));
+    todoController.deleteTodo(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    // Todo is no longer in the database
+    assertEquals(0, db.getCollection("todos").countDocuments(eq("_id", new ObjectId(testID))));
   }
 }
