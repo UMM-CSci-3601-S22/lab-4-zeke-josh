@@ -96,39 +96,32 @@ public class TodoControllerSpec {
     List<Document> testTodos = new ArrayList<>();
     testTodos.add(
       new Document()
-        .append("name", "Chris")
-        .append("age", 25)
-        .append("company", "UMM")
-        .append("email", "chris@this.that")
-        .append("role", "admin")
-        .append("avatar", "https://gravatar.com/avatar/8c9616d6cc5de638ea6920fb5d65fc6c?d=identicon"));
+        .append("owner", "Chris")
+        .append("category", "Homework")
+        .append("status", "Complete")
+        .append("body", "Random words for testing"));
     testTodos.add(
       new Document()
-        .append("name", "Pat")
-        .append("age", 37)
-        .append("company", "IBM")
-        .append("email", "pat@something.com")
-        .append("role", "editor")
-        .append("avatar", "https://gravatar.com/avatar/b42a11826c3bde672bce7e06ad729d44?d=identicon"));
+        .append("owner", "Lucy")
+        .append("category", "Software Design")
+        .append("status", "Complete")
+        .append("body", "Dog parks are for dogs"));
     testTodos.add(
       new Document()
-        .append("name", "Jamie")
-        .append("age", 37)
-        .append("company", "OHMNET")
-        .append("email", "jamie@frogs.com")
-        .append("role", "viewer")
-        .append("avatar", "https://gravatar.com/avatar/d4a6c71dd9470ad4cf58f78c100258bf?d=identicon"));
+      new Document()
+      .append("owner", "Fernando")
+      .append("category", "Homework")
+      .append("status", "Incomplete")
+      .append("body", "Computers are for humans"));
 
     samsId = new ObjectId();
     Document sam =
       new Document()
         .append("_id", samsId)
-        .append("name", "Sam")
-        .append("age", 45)
-        .append("company", "OHMNET")
-        .append("email", "sam@frogs.com")
-        .append("role", "viewer")
-        .append("avatar", "https://gravatar.com/avatar/08b7610b558a4cbbd20ae99072801f4d?d=identicon");
+        .append("owner", "Sam")
+        .append("category", "Software Design")
+        .append("status", "Complete")
+        .append("body", "Sam has an id"));
 
 
     todoDocuments.insertMany(testTodos);
@@ -190,50 +183,11 @@ public class TodoControllerSpec {
        javalinJackson.fromJsonString(result, Todo[].class).length);
   }
 
-  @Test
-  public void canGetTodosWithAge37() throws IOException {
-
-    // Set the query string to test with
-    mockReq.setQueryString("age=37");
-
-    // Create our fake Javalin context
-    Context ctx = mockContext("api/todos");
-
-    todoController.getTodos(ctx);
-
-    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
-
-    String result = ctx.resultString();
-    Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
-
-    assertEquals(2, resultTodos.length); // There should be two todos returned
-    for (Todo todo : resultTodos) {
-      assertEquals(37, todo.age); // Every todo should be age 37
-    }
-  }
-
-  /**
-  * Test that if the todo sends a request with an illegal value in
-  * the age field (i.e., something that can't be parsed to a number)
-  * we get a reasonable error code back.
-  */
-  @Test
-  public void respondsAppropriatelyToIllegalAge() {
-
-    mockReq.setQueryString("age=abc");
-    Context ctx = mockContext("api/todos");
-
-    // This should now throw a `ValidationException` because
-    // our request has an age that can't be parsed to a number.
-    assertThrows(ValidationException.class, () -> {
-      todoController.getTodos(ctx);
-    });
-  }
 
   @Test
-  public void canGetTodosWithCompany() throws IOException {
+  public void canGetTodosWithCategory() throws IOException {
 
-    mockReq.setQueryString("company=OHMNET");
+    mockReq.setQueryString("category=Homework");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -244,28 +198,28 @@ public class TodoControllerSpec {
 
     assertEquals(2, resultTodos.length); // There should be two todos returned
     for (Todo todo : resultTodos) {
-      assertEquals("OHMNET", todo.company);
+      assertEquals("Homework", todo.category);
     }
   }
 
   @Test
-  public void canGetTodosWithRole() throws IOException {
+  public void canGetTodosWithStatus() throws IOException {
 
-    mockReq.setQueryString("role=viewer");
+    mockReq.setQueryString("status=Incomplete");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
     assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
     String result = ctx.resultString();
     for (Todo todo : javalinJackson.fromJsonString(result, Todo[].class)) {
-      assertEquals("viewer", todo.role);
+      assertEquals("Incomplete", todo.status);
     }
   }
 
   @Test
-  public void canGetTodosWithGivenCompanyAndAge() throws IOException {
+  public void canGetTodosWithGivenCategoryAndStatus() throws IOException {
 
-    mockReq.setQueryString("company=OHMNET&age=37");
+    mockReq.setQueryString("category=Homework&status=Complete");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -275,8 +229,8 @@ public class TodoControllerSpec {
 
     assertEquals(1, resultTodos.length); // There should be one todo returned
     for (Todo todo : resultTodos) {
-      assertEquals("OHMNET", todo.company);
-      assertEquals(37, todo.age);
+      assertEquals("Homework", todo.category);
+      assertEquals(Complete, todo.status);
     }
   }
 
@@ -314,7 +268,7 @@ public class TodoControllerSpec {
       todoController.getTodo(ctx);
     });
   }
-
+/* Add todos
   @Test
   public void canAddTodo() throws IOException {
 
@@ -530,4 +484,5 @@ public class TodoControllerSpec {
     // Todo is no longer in the database
     assertEquals(0, db.getCollection("todos").countDocuments(eq("_id", new ObjectId(testID))));
   }
+  */
 }
