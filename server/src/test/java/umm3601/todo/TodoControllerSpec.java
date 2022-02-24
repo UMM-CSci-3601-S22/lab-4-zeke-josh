@@ -48,7 +48,7 @@ import io.javalin.plugin.json.JavalinJackson;
  * @throws IOException
  */
 // The tests here include a ton of "magic numbers" (numeric constants).
-// It wasn't clear to me that giving all of them names would actually
+// It wasn't clear to me that giving all of them owners would actually
 // help things. The fact that it wasn't obvious what to call some
 // of them says a lot. Maybe what this ultimately means is that
 // these tests can/should be restructured so the constants (there are
@@ -97,6 +97,7 @@ public class TodoControllerSpec {
     testTodos.add(
       new Document()
         .append("owner", "Chris")
+<<<<<<< Updated upstream
         .append("category", "Homework")
         .append("status", "Complete")
         .append("body", "Random words for testing"));
@@ -113,15 +114,45 @@ public class TodoControllerSpec {
       .append("category", "Homework")
       .append("status", "Incomplete")
       .append("body", "Computers are for humans"));
+=======
+        .append("age", 25)
+        .append("category", "UMM")
+        .append("email", "chris@this.that")
+        .append("status", "admin")
+    testTodos.add(
+      new Document()
+        .append("owner", "Pat")
+        .append("age", 37)
+        .append("category", "IBM")
+        .append("email", "pat@something.com")
+        .append("status", "editor")
+        .append("avatar", "https://gravatar.com/avatar/b42a11826c3bde672bce7e06ad729d44?d=identicon"));
+    testTodos.add(
+      new Document()
+        .append("owner", "Jamie")
+        .append("age", 37)
+        .append("category", "OHMNET")
+        .append("email", "jamie@frogs.com")
+        .append("status", "viewer")
+        .append("avatar", "https://gravatar.com/avatar/d4a6c71dd9470ad4cf58f78c100258bf?d=identicon"));
+>>>>>>> Stashed changes
 
     samsId = new ObjectId();
     Document sam =
       new Document()
         .append("_id", samsId)
         .append("owner", "Sam")
+<<<<<<< Updated upstream
         .append("category", "Software Design")
         .append("status", "Complete")
         .append("body", "Sam has an id"));
+=======
+        .append("age", 45)
+        .append("category", "OHMNET")
+        .append("email", "sam@frogs.com")
+        .append("status", "viewer")
+        .append("avatar", "https://gravatar.com/avatar/08b7610b558a4cbbd20ae99072801f4d?d=identicon");
+>>>>>>> Stashed changes
 
 
     todoDocuments.insertMany(testTodos);
@@ -187,7 +218,11 @@ public class TodoControllerSpec {
   @Test
   public void canGetTodosWithCategory() throws IOException {
 
+<<<<<<< Updated upstream
     mockReq.setQueryString("category=Homework");
+=======
+    mockReq.setQueryString("category=OHMNET");
+>>>>>>> Stashed changes
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -198,28 +233,44 @@ public class TodoControllerSpec {
 
     assertEquals(2, resultTodos.length); // There should be two todos returned
     for (Todo todo : resultTodos) {
+<<<<<<< Updated upstream
       assertEquals("Homework", todo.category);
+=======
+      assertEquals("OHMNET", todo.category);
+>>>>>>> Stashed changes
     }
   }
 
   @Test
   public void canGetTodosWithStatus() throws IOException {
 
+<<<<<<< Updated upstream
     mockReq.setQueryString("status=Incomplete");
+=======
+    mockReq.setQueryString("status=viewer");
+>>>>>>> Stashed changes
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
     assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
     String result = ctx.resultString();
     for (Todo todo : javalinJackson.fromJsonString(result, Todo[].class)) {
+<<<<<<< Updated upstream
       assertEquals("Incomplete", todo.status);
+=======
+      assertEquals("viewer", todo.status);
+>>>>>>> Stashed changes
     }
   }
 
   @Test
   public void canGetTodosWithGivenCategoryAndStatus() throws IOException {
 
+<<<<<<< Updated upstream
     mockReq.setQueryString("category=Homework&status=Complete");
+=======
+    mockReq.setQueryString("category=OHMNET&age=37");
+>>>>>>> Stashed changes
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -229,8 +280,13 @@ public class TodoControllerSpec {
 
     assertEquals(1, resultTodos.length); // There should be one todo returned
     for (Todo todo : resultTodos) {
+<<<<<<< Updated upstream
       assertEquals("Homework", todo.category);
       assertEquals(Complete, todo.status);
+=======
+      assertEquals("OHMNET", todo.category);
+      assertEquals(37, todo.age);
+>>>>>>> Stashed changes
     }
   }
 
@@ -248,7 +304,7 @@ public class TodoControllerSpec {
     Todo resultTodo = javalinJackson.fromJsonString(result, Todo.class);
 
     assertEquals(samsId.toHexString(), resultTodo._id);
-    assertEquals("Sam", resultTodo.name);
+    assertEquals("Sam", resultTodo.owner);
   }
 
   @Test
@@ -273,11 +329,11 @@ public class TodoControllerSpec {
   public void canAddTodo() throws IOException {
 
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": 25,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
 
     mockReq.setBodyContent(testNewTodo);
@@ -299,11 +355,11 @@ public class TodoControllerSpec {
     //verify todo was added to the database and the correct ID
     Document addedTodo = db.getCollection("todos").find(eq("_id", new ObjectId(id))).first();
     assertNotNull(addedTodo);
-    assertEquals("Test Todo", addedTodo.getString("name"));
+    assertEquals("Test Todo", addedTodo.getString("owner"));
     assertEquals(25, addedTodo.getInteger("age"));
-    assertEquals("testers", addedTodo.getString("company"));
+    assertEquals("testers", addedTodo.getString("category"));
     assertEquals("test@example.com", addedTodo.getString("email"));
-    assertEquals("viewer", addedTodo.getString("role"));
+    assertEquals("viewer", addedTodo.getString("status"));
     assertTrue(addedTodo.containsKey("avatar"));
   }
 
@@ -311,11 +367,11 @@ public class TodoControllerSpec {
   public void respondsAppropriateToAddingTodoWithInvalidEmail() throws IOException {
     String testNewTodo = "{"mpany\": \"testers\","
     + "\"email\": \"test@example.com\","
-    + "\"role\": \"invalidrole\""
+    + "\"status\": \"invalidstatus\""
     + "}";
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"invalidemail\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -329,11 +385,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithInvalidAge() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": \"notanumber\","
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -347,11 +403,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithAgeOfZero() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": 0,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -365,11 +421,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithNegativeAge() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": -1,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -384,9 +440,9 @@ public class TodoControllerSpec {
   public void respondsAppropriateToAddingTodoWithMissingName() throws IOException {
     String testNewTodo = "{"
       + "\"age\": 25,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -400,11 +456,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithEmptyName() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"\","
+      + "\"owner\": \"\","
       + "\"age\": 25,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -419,9 +475,9 @@ public class TodoControllerSpec {
   public void respondsAppropriateToAddingTodoWithMissingCompany() throws IOException {
     String testNewTodo = "{"
       + "\"age\": 25,"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -435,11 +491,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithEmptyCompany() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": 25,"
-      + "\"company\": \"\","
+      + "\"category\": \"\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"viewer\""
+      + "\"status\": \"viewer\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
@@ -453,11 +509,11 @@ public class TodoControllerSpec {
   @Test
   public void respondsAppropriateToAddingTodoWithInvalidRole() throws IOException {
     String testNewTodo = "{"
-      + "\"name\": \"Test Todo\","
+      + "\"owner\": \"Test Todo\","
       + "\"age\": 25,"
-      + "\"company\": \"testers\","
+      + "\"category\": \"testers\","
       + "\"email\": \"test@example.com\","
-      + "\"role\": \"invalidrole\""
+      + "\"status\": \"invalidstatus\""
       + "}";
     mockReq.setBodyContent(testNewTodo);
     mockReq.setMethod("POST");
