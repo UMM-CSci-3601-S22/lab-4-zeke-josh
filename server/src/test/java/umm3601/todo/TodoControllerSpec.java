@@ -4,10 +4,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static io.javalin.plugin.json.JsonMapperKt.JSON_MAPPER_KEY;
 import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mockrunner.mock.web.MockHttpServletRequest;
 import com.mockrunner.mock.web.MockHttpServletResponse;
 import com.mongodb.MongoClientSettings;
@@ -33,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.javalin.core.JavalinConfig;
-import io.javalin.core.validation.ValidationException;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
@@ -98,20 +93,19 @@ public class TodoControllerSpec {
       new Document()
         .append("owner", "Chris")
         .append("category", "Homework")
-        .append("status", "Complete")
+        .append("status", true)
         .append("body", "Random words for testing"));
     testTodos.add(
       new Document()
         .append("owner", "Lucy")
         .append("category", "Software Design")
-        .append("status", "Complete")
+        .append("status", true)
         .append("body", "Dog parks are for dogs"));
     testTodos.add(
       new Document()
-      new Document()
       .append("owner", "Fernando")
       .append("category", "Homework")
-      .append("status", "Incomplete")
+      .append("status", false)
       .append("body", "Computers are for humans"));
 
     samsId = new ObjectId();
@@ -120,8 +114,8 @@ public class TodoControllerSpec {
         .append("_id", samsId)
         .append("owner", "Sam")
         .append("category", "Software Design")
-        .append("status", "Complete")
-        .append("body", "Sam has an id"));
+        .append("status", true)
+        .append("body", "Sam has an id");
 
 
     todoDocuments.insertMany(testTodos);
@@ -211,8 +205,12 @@ public class TodoControllerSpec {
 
     assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
     String result = ctx.resultString();
-    for (Todo todo : javalinJackson.fromJsonString(result, Todo[].class)) {
-      assertEquals("Incomplete", todo.status);
+
+    Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
+
+    assertEquals(1, resultTodos.length); // There should be two todos returned
+    for (Todo todo : resultTodos) {
+      assertEquals(false, todo.status);
     }
   }
 
@@ -230,7 +228,7 @@ public class TodoControllerSpec {
     assertEquals(1, resultTodos.length); // There should be one todo returned
     for (Todo todo : resultTodos) {
       assertEquals("Homework", todo.category);
-      assertEquals(Complete, todo.status);
+      assertEquals(true, todo.status);
     }
   }
 
@@ -248,7 +246,7 @@ public class TodoControllerSpec {
     Todo resultTodo = javalinJackson.fromJsonString(result, Todo.class);
 
     assertEquals(samsId.toHexString(), resultTodo._id);
-    assertEquals("Sam", resultTodo.name);
+    assertEquals("Sam", resultTodo.owner);
   }
 
   @Test

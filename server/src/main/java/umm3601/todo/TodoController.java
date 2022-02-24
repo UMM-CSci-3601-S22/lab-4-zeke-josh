@@ -67,13 +67,15 @@ public class TodoController {
     List<Bson> filters = new ArrayList<>(); // start with a blank document
 
     if (ctx.queryParamMap().containsKey(CATEGORY_KEY)) {
-        String targetCategory = ctx.queryParamAsClass(CATEGORY_KEY, String.class).get();
-        filters.add(eq(CATEGORY_KEY, targetCategory));
+        filters.add(eq(CATEGORY_KEY, ctx.queryParam(CATEGORY_KEY)));
     }
 
     if (ctx.queryParamMap().containsKey(STATUS_KEY)) {
-      Boolean targetStatus = ctx.queryParamAsClass(STATUS_KEY, Boolean.class).get();
-      filters.add(eq(STATUS_KEY, targetStatus));
+        Boolean targetStatus = false;
+        if (ctx.queryParam(STATUS_KEY).equals("Complete")) {
+          targetStatus = true;
+        }
+        filters.add(eq(STATUS_KEY, targetStatus));
     }
 
     // Sort the results. Use the `sortby` query param (default "owner")
