@@ -201,6 +201,24 @@ public class TodoControllerSpec {
     }
   }
 
+  // @Test
+  // public void canGetTodoWhoseBodyContains() throws IOException {
+
+  //   mockReq.setQueryString("body=for");
+  //   Context ctx = mockContext("api/todos");
+  //   todoController.getTodos(ctx);
+
+  //   assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+  //   String result = ctx.resultString();
+
+  //   Todo[] resultTodos = javalinJackson.fromJsonString(result, Todo[].class);
+
+  //   assertEquals(3, resultTodos.length);
+  //   for (Todo todo : resultTodos) {
+  //     assertTrue(todo.body.contains("for"));
+  //   }
+  // }
+
   @Test
   public void canGetTodosWithStatus() throws IOException {
 
@@ -222,7 +240,7 @@ public class TodoControllerSpec {
   @Test
   public void canGetTodosWithGivenCategoryAndStatus() throws IOException {
 
-    mockReq.setQueryString("category=Homework&status=Complete");
+    mockReq.setQueryString("category=Homework&status=true");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 

@@ -71,10 +71,7 @@ public class TodoController {
     }
 
     if (ctx.queryParamMap().containsKey(STATUS_KEY)) {
-        Boolean targetStatus = false;
-        if (ctx.queryParam(STATUS_KEY).equals("Complete")) {
-          targetStatus = true;
-        }
+        Boolean targetStatus = ctx.queryParamAsClass(STATUS_KEY, Boolean.class).get();
         filters.add(eq(STATUS_KEY, targetStatus));
     }
 
