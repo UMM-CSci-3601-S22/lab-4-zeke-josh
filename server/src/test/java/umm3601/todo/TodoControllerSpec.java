@@ -204,7 +204,7 @@ public class TodoControllerSpec {
   @Test
   public void canGetTodosWithStatus() throws IOException {
 
-    mockReq.setQueryString("status=Incomplete");
+    mockReq.setQueryString("status=false");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -222,7 +222,7 @@ public class TodoControllerSpec {
   @Test
   public void canGetTodosWithGivenCategoryAndStatus() throws IOException {
 
-    mockReq.setQueryString("category=Homework&status=Complete");
+    mockReq.setQueryString("category=Homework&status=true");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
@@ -314,7 +314,7 @@ public class TodoControllerSpec {
     String testNewTodo = "{"
       + "\"owner\": \"Test Todo\","
       + "\"category\": \"testers\","
-      + "\"status\": \"Complete\","
+      + "\"status\": \"complete\","
       + "\"body\": \"test body\""
       + "}";
     mockReq.setBodyContent(testNewTodo);

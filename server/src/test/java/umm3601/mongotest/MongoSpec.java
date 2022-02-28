@@ -31,6 +31,7 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Sorts;
 
 import org.bson.Document;
+import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -167,8 +168,6 @@ public class MongoSpec {
         .append("category", "Software Design")
         .append("status", true)
         .append("body", "Sam has an id"));
-
-
 
     todoDocuments.insertMany(testTodos);
 
@@ -398,5 +397,70 @@ public class MongoSpec {
     assertEquals(2, javalinJackson.fromJsonString(result, User[].class).length);
     assertEquals(numberOfUsers,
        javalinJackson.fromJsonString(result, User[].class).length);
+  }
+
+  @Test
+  public void canGetUsersWithMultipleParams() {
+    mockReq.setQueryString("age=25&company=UMM&name=Chris");
+    Context ctx = mockContext("api/users");
+
+    userController.getUsers(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+
+    FindIterable<Document> documents = userDocuments.find(and(eq("age", 25), eq("company", "UMM"), eq("name", "Chris")));
+    List<Document> docs = intoUserList(documents);
+    assertEquals(1, docs.size());
+    int numberOfUsers = countUsers(documents);
+
+    assertEquals(1, numberOfUsers);
+    assertEquals(1, javalinJackson.fromJsonString(result, User[].class).length);
+    assertEquals(numberOfUsers,
+       javalinJackson.fromJsonString(result, User[].class).length);
+  }
+
+  @Test
+  public void canGetTodoWithSpecifiedStatus()
+  {
+    mockReq.setQueryString("status=true");
+    Context ctx = mockContext("api/todos");
+
+    todoController.getTodos(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+
+    FindIterable<Document> documents = todoDocuments.find(eq("status", true));
+
+    int numberOfTodos = countTodos(documents);
+
+    assertEquals(3, numberOfTodos);
+    assertEquals(3, javalinJackson.fromJsonString(result, Todo[].class).length);
+    assertEquals(numberOfTodos,
+      javalinJackson.fromJsonString(result, Todo[].class).length);
+  }
+
+  @Test
+  public void canGetTodosWithMultipleParams() {
+    mockReq.setQueryString("status=true&category=Software Design");
+    Context ctx = mockContext("api/todos");
+
+    todoController.getTodos(ctx);
+
+    assertEquals(HttpCode.OK.getStatus(), mockRes.getStatus());
+
+    String result = ctx.resultString();
+
+    FindIterable<Document> documents = todoDocuments.find(and(eq("status", true), eq("category", "Software Design")));
+
+    int numberOfTodos = countTodos(documents);
+
+    assertEquals(2, numberOfTodos);
+    assertEquals(2, javalinJackson.fromJsonString(result, Todo[].class).length);
+    assertEquals(numberOfTodos,
+      javalinJackson.fromJsonString(result, Todo[].class).length);
   }
 }
