@@ -21,7 +21,7 @@ export class TodoService {
         httpParams = httpParams.set('category', filters.category);
       }
       // working
-      if (filters.status) {
+      if (filters.status !== undefined) {
         httpParams = httpParams.set('status', filters.status);
       }
     }

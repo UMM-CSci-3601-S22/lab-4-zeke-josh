@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
 import { Todo } from './todo';
 import { TodoService } from './todo.service';
 
@@ -9,7 +10,7 @@ import { TodoService } from './todo.service';
   styleUrls: ['./todo-list.component.scss'],
   providers: []
 })
-export class TodoListComponent implements OnInit {
+export class TodoListComponent implements OnInit, OnDestroy {
   public serverFilteredTodos: Todo[];
   public filteredTodos: Todo[];
 
@@ -19,6 +20,7 @@ export class TodoListComponent implements OnInit {
   public todoCategory: string;
   public todoLimit: number;
   public viewType: 'card' | 'list' = 'card';
+  getTodoSub: Subscription;
 
   constructor(private todoService: TodoService, private snackBar: MatSnackBar) { }
 
@@ -27,7 +29,8 @@ export class TodoListComponent implements OnInit {
    * in the GUI.
    */
    getTodosFromServer() {
-    this.todoService.getTodos({
+    this.unsub();
+    this.getTodoSub = this.todoService.getTodos({
       category: this.todoCategory,
       status: this.todoStatus,
     }).subscribe(returnedTodos => {
@@ -43,7 +46,7 @@ export class TodoListComponent implements OnInit {
       // the problem and display a message.
       console.error('We couldn\'t get the list of todos; the server might be down');
       this.snackBar.open(
-        'Problem contacting the server – try again',
+        'Problem contacting the server - try again',
         'OK',
         // The message will disappear after 3 seconds.
         { duration: 3000 });
@@ -62,5 +65,15 @@ export class TodoListComponent implements OnInit {
 
   ngOnInit(): void {
     this.getTodosFromServer();
+  }
+
+  ngOnDestroy(): void {
+      this.unsub();
+  }
+
+  unsub(): void {
+    if (this.getTodoSub) {
+      this.getTodoSub.unsubscribe();
+    }
   }
 }
