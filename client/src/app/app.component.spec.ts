@@ -5,7 +5,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatCardModule } from '@angular/material/card';
-import { MatOptionModule } from '@angular/material/core';
 import { MatCard } from '@angular/material/card';
 import { MatCardContent } from '@angular/material/card';
 import { MatCardTitle } from '@angular/material/card';
@@ -23,18 +22,18 @@ describe('AppComponent', () => {
         RouterTestingModule,
         MatToolbarModule,
         MatIconModule,
-        MatSidenavModule,
         MatCardModule,
+        MatSidenavModule,
         MatListModule,
+      ],
+      declarations: [
+        AppComponent,
         MatCard,
         MatCardTitle,
         MatCardContent,
-        MatHint,
         MatSelect,
+        MatHint,
         MatFormField
-      ],
-      declarations: [
-        AppComponent
       ],
     }).compileComponents();
   }));
