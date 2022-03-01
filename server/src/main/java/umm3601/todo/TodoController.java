@@ -71,11 +71,7 @@ public class TodoController {
     }
 
     if (ctx.queryParamMap().containsKey(STATUS_KEY)) {
-        Boolean targetStatus = false;
-        if (ctx.queryParam(STATUS_KEY).equals("Complete")) {
-          targetStatus = true;
-        }
-        filters.add(eq(STATUS_KEY, targetStatus));
+        filters.add(eq(STATUS_KEY, ctx.queryParam(STATUS_KEY)));
     }
 
     // Sort the results. Use the `sortby` query param (default "owner")

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Todo } from './todo';
+import { map } from 'rxjs/operators';
 
 @Injectable()
 export class TodoService {
@@ -13,7 +14,7 @@ export class TodoService {
   constructor(private httpClient: HttpClient) { }
 
   // Get the todos from the server, filtered by the information on the filters map
-  getTodos(filters?: {category?: string; status?: boolean }): Observable<Todo[]> {
+  getTodos(filters?: { category?: string; status?: boolean }): Observable<Todo[]> {
     let httpParams: HttpParams = new HttpParams();
     if (filters) {
       // not working
