@@ -75,7 +75,7 @@ export class AddTodoComponent implements OnInit {
 
       status: new FormControl('', Validators.compose([
         Validators.required,
-        Validators.pattern('complete' || 'incomplete'),
+        Validators.pattern('^(true|false)$'),
       ])),
     });
 

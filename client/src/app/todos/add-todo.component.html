@@ -45,8 +45,8 @@
           <mat-form-field>
             <mat-label>Status</mat-label>
             <mat-select required formControlName="status">
-              <mat-option value="complete">Complete</mat-option>
-              <mat-option value="incomplete">Incomplete</mat-option>
+              <mat-option value="true">Complete</mat-option>
+              <mat-option value="false">Incomplete</mat-option>
             </mat-select>
             <mat-error *ngIf="addTodoForm.get('status').hasError('required')">You must make a selection</mat-error>
             <mat-error *ngIf="addTodoForm.get('status').hasError('pattern') && !addTodoForm.get('status').hasError('required')">
