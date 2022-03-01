@@ -17,11 +17,11 @@ export class TodoService {
   getTodos(filters?: { category?: string; status?: boolean }): Observable<Todo[]> {
     let httpParams: HttpParams = new HttpParams();
     if (filters) {
-      // not working
+      // working
       if (filters.category) {
         httpParams = httpParams.set('category', filters.category);
       }
-      // working
+      // NOT working
       if (filters.status !== undefined) {
         httpParams = httpParams.set('status', filters.status);
       }
