@@ -70,7 +70,7 @@ export class UserListComponent implements OnInit, OnDestroy  {
       // the problem and display a message.
       console.error('We couldn\'t get the list of users; the server might be down');
       this.snackBar.open(
-        'Problem contacting the server – try again',
+        'Problem contacting the server - try again',
         'OK',
         // The message will disappear after 3 seconds.
         { duration: 3000 });

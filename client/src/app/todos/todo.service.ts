@@ -14,15 +14,15 @@ export class TodoService {
   constructor(private httpClient: HttpClient) { }
 
   // Get the todos from the server, filtered by the information on the filters map
-  getTodos(filters?: {category?: string; status?: boolean }): Observable<Todo[]> {
+  getTodos(filters?: { category?: string; status?: boolean }): Observable<Todo[]> {
     let httpParams: HttpParams = new HttpParams();
     if (filters) {
-      // not working
+      // working
       if (filters.category) {
         httpParams = httpParams.set('category', filters.category);
       }
-      // working
-      if (filters.status) {
+      // NOT working
+      if (filters.status !== undefined) {
         httpParams = httpParams.set('status', filters.status);
       }
     }
