@@ -46,14 +46,12 @@ public class TodoController {
 
     try {
       todo = todoCollection.find(eq("_id", new ObjectId(id))).first();
-    }
-    catch (IllegalArgumentException e){
+    } catch (IllegalArgumentException e) {
       throw new BadRequestResponse("The requested todo id wasn't a legal Mongo object id.");
     }
     if (todo == null) {
       throw new NotFoundResponse("The requested todo was not found.");
-    }
-    else {
+    } else {
       ctx.json(todo);
     }
   }
