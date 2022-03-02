@@ -71,7 +71,11 @@ public class TodoController {
     }
 
     if (ctx.queryParamMap().containsKey(STATUS_KEY)) {
-        filters.add(eq(STATUS_KEY, ctx.queryParam(STATUS_KEY)));
+      if (!ctx.queryParam(STATUS_KEY).equals("true") && !ctx.queryParam(STATUS_KEY).equals("false")) {
+        throw new BadRequestResponse("Illegal status sent");
+      }
+      Boolean targetStatus = ctx.queryParamAsClass(STATUS_KEY, Boolean.class).get();
+      filters.add(eq(STATUS_KEY, targetStatus));
     }
 
     // Sort the results. Use the `sortby` query param (default "owner")
