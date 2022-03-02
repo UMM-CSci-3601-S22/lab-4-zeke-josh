@@ -96,7 +96,7 @@ public class TodoController {
       // Verify that the Todo has a owner that is not blank
       .check(tdo -> tdo.owner != null && tdo.owner.length() > 0, "Todo must have a non-empty Todo owner")
       // Verify that the status is one of the valid status
-      .check(tdo -> tdo.status == true || false, "Todo must have a legal Todo status")
+      .check(tdo -> tdo.status || !tdo.status, "Todo must have a legal Todo status")
       // Verify that the Todo has a body that is not blank
       .check(tdo -> tdo.body != null && tdo.body.length() > 0, "Todo must have a legal body")
       // Verify that the Todo has a category that is not blank
