@@ -31,7 +31,6 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Sorts;
 
 import org.bson.Document;
-import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -410,7 +409,9 @@ public class MongoSpec {
 
     String result = ctx.resultString();
 
-    FindIterable<Document> documents = userDocuments.find(and(eq("age", 25), eq("company", "UMM"), eq("name", "Chris")));
+    FindIterable<Document> documents = userDocuments
+    .find(and(eq("age", 25), eq("company", "UMM"), eq("name", "Chris")));
+
     List<Document> docs = intoUserList(documents);
     assertEquals(1, docs.size());
     int numberOfUsers = countUsers(documents);
@@ -422,8 +423,8 @@ public class MongoSpec {
   }
 
   @Test
-  public void canGetTodoWithSpecifiedStatus()
-  {
+  public void canGetTodoWithSpecifiedStatus() {
+
     mockReq.setQueryString("status=true");
     Context ctx = mockContext("api/todos");
 
