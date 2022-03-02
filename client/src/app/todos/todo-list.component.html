@@ -83,8 +83,7 @@
             <h3 mat-subheader>Todos</h3>
             <a mat-list-item *ngFor="let todo of this.filteredTodos" [routerLink]="['/todos', todo._id]" class="todo-list-item">
               <h3 matLine class="todo-list-owner"> {{todo.owner}} </h3>
-              <mat-icon matLine class="todo-list-status" *ngIf="todo.status">done</mat-icon>
-              <mat-icon matLine class="todo-list-status" *ngIf="!todo.status">clear</mat-icon>
+              <h4 matLine class="todo-list-status"> {{todo.status}} </h4>
               <h4 matLine class="todo-list-category"> {{todo.category}} </h4>
             </a>
           </mat-nav-list>
