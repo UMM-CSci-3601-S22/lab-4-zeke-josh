@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -222,7 +221,7 @@ public class TodoControllerSpec {
   @Test
   public void canGetTodosWithGivenCategoryAndStatus() throws IOException {
 
-    mockReq.setQueryString("category=Homework&status=Complete");
+    mockReq.setQueryString("category=Homework&status=true");
     Context ctx = mockContext("api/todos");
     todoController.getTodos(ctx);
 
