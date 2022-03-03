@@ -67,7 +67,7 @@ const MATERIAL_MODULES: any[] = [
     AddUserComponent,
     TodoCardComponent,
     TodoListComponent,
-    TodoProfileComponent
+    TodoProfileComponent,
     AddTodoComponent
   ],
   imports: [
