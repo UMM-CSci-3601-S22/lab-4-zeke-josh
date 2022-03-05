@@ -15,7 +15,7 @@ export class AppPage {
     return cy.get('.sidenav');
   }
 
-  getNavLink(navOption: 'Home' | 'Users') {
+  getNavLink(navOption: 'Home' | 'Users' | 'Todos') {
     return cy.contains('[routerlink] > .mat-list-item-content', `${navOption}`);
   }
 }

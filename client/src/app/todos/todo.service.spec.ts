@@ -205,4 +205,18 @@ describe('TodoService', () => {
       });
     });
   });
+
+  it('addTodo() posts to api/todos', () => {
+
+    todoService.addTodo(testTodos[1]).subscribe(
+      id => expect(id).toBe('testid')
+    );
+
+    const req = httpTestingController.expectOne(todoService.todoURL);
+
+    expect(req.request.method).toEqual('POST');
+    expect(req.request.body).toEqual(testTodos[1]);
+
+    req.flush({id: 'testid'});
+  });
 });

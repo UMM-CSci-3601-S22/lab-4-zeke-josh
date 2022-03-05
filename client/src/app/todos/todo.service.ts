@@ -60,5 +60,10 @@ export class TodoService {
 
     return filteredTodos;
   }
+
+  addTodo(newTodo: Todo): Observable<string> {
+    // Send post request to add a new todo with the todo data as the body.
+    return this.httpClient.post<{id: string}>(this.todoURL, newTodo).pipe(map(res => res.id));
+  }
 }
 
