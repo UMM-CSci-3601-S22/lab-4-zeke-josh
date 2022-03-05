@@ -14,7 +14,7 @@ describe('Add todo', () => {
 
   it('Should enable and disable the add todo button', () => {
     // ADD TODO button should be disabled until all the necessary fields
-    // are filled. Once the last (`#emailField`) is filled, then the button should
+    // are filled. Once the last (`#status`) is filled, then the button should
     // become enabled.
     page.addTodoButton().should('be.disabled');
     page.getFormField('owner').type('test');
@@ -23,7 +23,9 @@ describe('Add todo', () => {
     page.addTodoButton().should('be.disabled');
     page.getFormField('body').type('test');
     page.addTodoButton().should('be.disabled');
-    page.getFormField('status').type('not.boolean');
+    page.getFormField('body').clear().type('This is a test body.');
+    page.addTodoButton().should('be.disabled');
+    page.getFormField('status').get('mat-select[formControlName=status]').click().get('mat-option').contains('Complete').click();
     // all the required fields have valid input, then it should be enabled
     page.addTodoButton().should('be.enabled');
   });
@@ -71,19 +73,6 @@ describe('Add todo', () => {
     page.getFormField('body').clear().type('Smith').blur();
     cy.get('[data-test=bodyError]').should('not.exist');
 
-    // Before doing anything there shouldn't be an error
-    cy.get('[data-test=statusError]').should('not.exist');
-    // Just clicking the status field without entering anything should cause an error message
-    page.getFormField('status').click().blur();
-    // Some more tests for various invalid status inputs
-    cy.get('[data-test=statusError]').should('exist').and('be.visible');
-    page.getFormField('status').type('asd').blur();
-    cy.get('[data-test=statusError]').should('exist').and('be.visible');
-    page.getFormField('status').clear().type('@example.com').blur();
-    cy.get('[data-test=statusError]').should('exist').and('be.visible');
-    // Entering a valid status should remove the error.
-    page.getFormField('status').clear().type('true').blur();
-    cy.get('[data-test=statusError]').should('not.exist');
   });
 
   describe('Adding a new Todo', () => {
@@ -105,42 +94,17 @@ describe('Add todo', () => {
 
       // New URL should end in the 24 hex character Mongo ID of the newly added Todo
       cy.url()
-        .should('match', /\/Todos\/[0-9a-fA-F]{24}$/)
-        .should('not.match', /\/Todos\/new$/);
+        .should('match', /\/todos\/[0-9a-fA-F]{24}$/)
+        .should('not.match', /\/todos\/new$/);
 
       // The new Todo should have all the same attributes as we entered
-      cy.get('.Todo-card-owner').should('have.text', todo.owner);
-      cy.get('.Todo-card-category').should('have.text', todo.category);
-      cy.get('.Todo-card-body').should('have.text', todo.body);
-      cy.get('.Todo-card-status').should('have.text', todo.status);
+      cy.get('.todo-card-owner').should('have.text', todo.owner);
+      cy.get('.todo-card-category').should('have.text', todo.category);
+      cy.get('.todo-card-body').should('have.text', todo.body);
+      cy.get('.todo-card-status').should('have.text', todo.status.toString());
 
       // We should see the confirmation message at the bottom of the screen
       cy.get('.mat-simple-snackbar').should('contain', `Added Todo ${todo.owner}`);
-    });
-
-    it('Should fail with no category', () => {
-      const todo: Todo = {
-        _id: null,
-        owner: 'Test Todo',
-        category: null, // The category being set to null means nothing will be typed for it
-        body: 'Test example',
-        status: false
-      };
-
-      page.addTodo(todo);
-
-      // We should get an error message
-      cy.get('.mat-simple-snackbar').should('contain', `Failed to add the Todo`);
-
-      // We should have stayed on the new Todo page
-      cy.url()
-        .should('not.match', /\/Todos\/[0-9a-fA-F]{24}$/)
-        .should('match', /\/Todos\/new$/);
-
-      // The things we entered in the form should still be there
-      page.getFormField('owner').should('have.value', todo.owner);
-      page.getFormField('body').should('have.value', todo.body);
-      page.getFormField('status').should('have.value', todo.status);
     });
   });
 

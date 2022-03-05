@@ -25,10 +25,23 @@ export class AddTodoPage {
   }
 
   addTodo(newTodo: Todo) {
-    this.getFormField('owner').type(newTodo.owner);
-    this.getFormField('category').type(newTodo.category);
-    this.getFormField('body').type(newTodo.body);
-    this.getFormField('status').type(newTodo.status.toString());
+    if (newTodo.owner) {
+     this.getFormField('owner').type(newTodo.owner);
+    }
+    if (newTodo.category) {
+      this.getFormField('category').type(newTodo.category);
+    }
+    if (newTodo.body) {
+      this.getFormField('body').type(newTodo.body);
+    }
+    if (newTodo.status !== undefined) {
+      if (newTodo.status) {
+        this.getFormField('status').get('mat-select[formControlName=status]').click().get('mat-option').contains('Complete').click();
+      }
+      else {
+        this.getFormField('status').get('mat-select[formControlName=status]').click().get('mat-option').contains('Incomplete').click();
+      }
+    }
     return this.addTodoButton().click();
   }
 }

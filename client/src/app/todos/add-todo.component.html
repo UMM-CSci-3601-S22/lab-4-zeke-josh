@@ -8,10 +8,10 @@
         <mat-card-content fxLayout="column">
           <mat-form-field>
             <mat-label>Owner</mat-label>
-            <input matInput placeholder="Owner" formControlName="Owner"
+            <input matInput placeholder="Owner" formControlName="owner"
                   required>
             <mat-error *ngFor="let validation of addTodoValidationMessages.owner">
-              <mat-error class="error-message" data-test="nameError"
+              <mat-error class="error-message" data-test="ownerError"
                         *ngIf="addTodoForm.get('owner').hasError(validation.type) && (addTodoForm.get('owner').dirty || addTodoForm.get('owner').touched)">
                 {{validation.message}}
               </mat-error>
@@ -20,10 +20,10 @@
 
           <mat-form-field>
             <mat-label>Category</mat-label>
-            <input matInput placeholder="Category" formControlName="Category"
+            <input matInput placeholder="Category" formControlName="category"
                   required>
             <mat-error *ngFor="let validation of addTodoValidationMessages.category">
-              <mat-error class="error-message" data-test="nameError"
+              <mat-error class="error-message" data-test="categoryError"
                         *ngIf="addTodoForm.get('category').hasError(validation.type) && (addTodoForm.get('category').dirty || addTodoForm.get('category').touched)">
                 {{validation.message}}
               </mat-error>
@@ -32,10 +32,10 @@
 
           <mat-form-field>
             <mat-label>Body</mat-label>
-            <input matInput placeholder="Body" formControlName="Body"
+            <input matInput placeholder="Body" formControlName="body"
                   required>
-            <mat-error *ngFor="let validation of addTodoValidationMessages.category">
-              <mat-error class="error-message" data-test="nameError"
+            <mat-error *ngFor="let validation of addTodoValidationMessages.body">
+              <mat-error class="error-message" data-test="bodyError"
                         *ngIf="addTodoForm.get('body').hasError(validation.type) && (addTodoForm.get('body').dirty || addTodoForm.get('body').touched)">
                 {{validation.message}}
               </mat-error>
